@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.middleware.cors import CORSMiddleware
 from jose import jwt, JWTError
 from typing import Optional
 from app.config.configRedis import redis_client
@@ -33,6 +34,15 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 # Path to the CSV file
 CSV_FILE_PATH = "backend_table.csv"
 
+# CORS Middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Replace "*" with specific origins for better security
+    allow_credentials=True,
+    allow_methods=["*"],  # Or specify methods: ["GET", "POST", "PUT", "DELETE"]
+    allow_headers=["*"],  # Or specify headers: ["Content-Type", "Authorization"]
+)
+
 @app.get('/')
 def read_root():
     return {"Hello": "World"}
@@ -54,7 +64,7 @@ async def generate_numbers_task():
             print(f"Error in generating numbers: {e}")
         await asyncio.sleep(1)  
 
-@app.post("/register")
+@app.post("/api/auth/register")
 async def register(request: Request):
     try:
         user_data = await request.json()
@@ -73,7 +83,7 @@ async def register(request: Request):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error: {str(e)}")
 
-@app.post("/login")
+@app.post("/api/auth/login")
 async def login(request: Request):
     try:
         form_data = await request.json()
@@ -93,7 +103,7 @@ async def login(request: Request):
         raise HTTPException(status_code=400, detail=f"Error: {str(e)}")
 
 
-@app.get("/random_numbers", dependencies=[Depends(validate_token)])
+@app.get("/api/random_numbers", dependencies=[Depends(validate_token)])
 async def get_random_numbers():
     try:
         keys = redis_client.keys(pattern="random_number:*")
