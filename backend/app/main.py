@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException, status, BackgroundTasks, Request
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, HTTPException, status, BackgroundTasks, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from jose import jwt, JWTError
@@ -18,6 +18,7 @@ import pytz
 import threading
 import os
 import asyncio
+import json
 
 app = FastAPI()
 
@@ -37,11 +38,18 @@ CSV_FILE_PATH = "backend_table.csv"
 # CORS Middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Replace "*" with specific origins for better security
+    allow_origins=["*"], 
     allow_credentials=True,
-    allow_methods=["*"],  # Or specify methods: ["GET", "POST", "PUT", "DELETE"]
-    allow_headers=["*"],  # Or specify headers: ["Content-Type", "Authorization"]
+    allow_methods=["*"], 
+    allow_headers=["*"], 
 )
+
+def verify_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload 
+    except JWTError:
+        raise HTTPException(status_code=403, detail="Invalid token")
 
 @app.get('/')
 def read_root():
@@ -51,7 +59,6 @@ def read_root():
 async def start_background_tasks():
     asyncio.create_task(generate_numbers_task())
 
-
 async def generate_numbers_task():
     while True:
         try:
@@ -59,10 +66,11 @@ async def generate_numbers_task():
             utc_now = datetime.utcnow()
             ist_now = utc_now.replace(tzinfo=pytz.utc).astimezone(IST)
             timestamp = ist_now.isoformat()
-            redis_client.set(name=f"random_number:{timestamp}", value=number, ex=30) 
+            redis_client.zadd("random_numbers", {json.dumps({"timestamp": timestamp, "number": number}): ist_now.timestamp()})
+            redis_client.zremrangebyscore("random_numbers", 0, (datetime.utcnow() - timedelta(seconds=30)).timestamp())
         except Exception as e:
             print(f"Error in generating numbers: {e}")
-        await asyncio.sleep(1)  
+        await asyncio.sleep(1)
 
 @app.post("/api/auth/register")
 async def register(request: Request):
@@ -103,19 +111,32 @@ async def login(request: Request):
         raise HTTPException(status_code=400, detail=f"Error: {str(e)}")
 
 
-@app.get("/api/random_numbers", dependencies=[Depends(validate_token)])
-async def get_random_numbers():
+@app.websocket("/ws/random_numbers")
+async def websocket_endpoint(websocket: WebSocket):
+    token = websocket.query_params.get("token")
+    if not token:
+        await websocket.close(code=4001, reason="Authentication token required")
+        return
+
     try:
-        keys = redis_client.keys(pattern="random_number:*")
-        numbers = []
-        for key in keys:
-            timestamp = key.split("random_number:")[1]
-            value = redis_client.get(key)
-            if value is not None:
-                numbers.append({"timestamp": timestamp, "number": float(value)})
-        return {"random_numbers": sorted(numbers, key=lambda x: x["timestamp"])}
+        verify_token(token)
+    except HTTPException:
+        await websocket.close(code=4001, reason="Invalid authentication token")
+        return
+
+    await websocket.accept()
+    try:
+        while True:
+            raw_numbers = redis_client.zrange("random_numbers", -10, -1)
+            numbers = [json.loads(item) for item in raw_numbers]
+
+            await websocket.send_text(json.dumps(numbers))
+            await asyncio.sleep(1)
+    except WebSocketDisconnect:
+        print("WebSocket connection closed")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error fetching random numbers: {e}")
+        print(f"WebSocket error: {e}")
+        await websocket.close()
 
 
 @app.get("/csv", dependencies=[Depends(validate_token)])

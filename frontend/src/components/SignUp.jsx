@@ -2,13 +2,15 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import React, { useState } from "react";
 import { login } from "../redux/AuthSlice";
-import {useDispatch} from "react-redux";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 const SignUp = ({ toggleAuthView }) => {
   const [formData, setFormData] = useState({ username: "", password: "", confirmPassword: "" });
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const dispatch = useDispatch();
+  const Navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -56,8 +58,7 @@ const SignUp = ({ toggleAuthView }) => {
       Cookies.set("accessToken", access_token);
       dispatch(login(username));
       setError(null);
-      // Navigate to dashboard after sign up
-      // Navigate("/dashboard");  
+      Navigate("/dashboard");  
     } catch (error) {
       setError(error.response?.data?.message || "Sign up failed. Please try again.");
     }

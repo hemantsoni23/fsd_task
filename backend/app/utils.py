@@ -38,7 +38,7 @@ def write_csv_with_pandas(file_path, df):
 
 def generate_random_number():
     import random
-    return random.uniform(0, 10000)
+    return int(random.uniform(0, 1000000))
 
 def validate_token(request: Request):
     auth_header = request.headers.get("Authorization")
