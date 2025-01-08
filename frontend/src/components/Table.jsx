@@ -4,7 +4,7 @@ const Table = ({ headers, data, isEditable, actions, newRow, setNewRow }) => (
       <tr>
         {headers.map((header, index) => (
           <th key={index} className="border px-4 py-2">
-            {header}
+            {header.toUpperCase()}
           </th>
         ))}
         {actions && <th className="border px-4 py-2">Actions</th>}
@@ -14,7 +14,7 @@ const Table = ({ headers, data, isEditable, actions, newRow, setNewRow }) => (
       {data.map((row, rowIndex) => (
         <tr key={rowIndex}>
           {Object.entries(row).map(([key, value]) => (
-            <td key={key} className="border px-4 py-2">
+            <td key={key} className="border px-4 py-2 text-center">
               {isEditable ? (
                 <input
                   type="text"

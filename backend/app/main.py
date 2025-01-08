@@ -19,6 +19,7 @@ import threading
 import os
 import asyncio
 import json
+import pandas as pd
 
 app = FastAPI()
 
@@ -139,7 +140,7 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close()
 
 
-@app.get("/csv", dependencies=[Depends(validate_token)])
+@app.get("/api/csv", dependencies=[Depends(validate_token)])
 async def fetch_csv():
     """
     Fetch CSV File: Retrieve the contents of the backend_table.csv file.
@@ -148,31 +149,47 @@ async def fetch_csv():
     return {"data": data.to_dict(orient="records")}
 
 
-@app.post("/csv", dependencies=[Depends(validate_token)])
+@app.post("/api/csv", dependencies=[Depends(validate_token)])
 async def add_row(data: dict):
     """
     Create Operation: Add a new row to the CSV file.
     """
     create_backup(CSV_FILE_PATH)
     df = read_csv_with_pandas(CSV_FILE_PATH)
-    df = df.append(data, ignore_index=True)
+    df = pd.concat([df, pd.DataFrame([data])], ignore_index=True)
     write_csv_with_pandas(CSV_FILE_PATH, df)
     return {"message": "Row added successfully"}
 
 
-@app.put("/csv", dependencies=[Depends(validate_token)])
+@app.put("/api/csv", dependencies=[Depends(validate_token)])
 async def update_row(data: dict):
     """
     Update Operation: Update an existing row in the CSV file.
     """
     create_backup(CSV_FILE_PATH)
     df = read_csv_with_pandas(CSV_FILE_PATH)
-    df.loc[df["user"] == data["user"], :] = data
+
+    try:
+        for column in df.columns:
+            if column in data:
+                if df[column].dtype == 'float64':
+                    try:
+                        data[column] = float(data[column])
+                    except ValueError:
+                        return {"error": f"Invalid value for column '{column}': {data[column]}"}
+
+        # Update row
+        df.loc[df["user"] == data["user"], :] = pd.DataFrame([data]).reindex(columns=df.columns).values
+
+    except KeyError as e:
+        return {"error": f"KeyError: {e}. Ensure 'data' keys match DataFrame columns."}
+    except ValueError as e:
+        return {"error": f"ValueError: {e}. Ensure 'data' has correct structure."}
+
     write_csv_with_pandas(CSV_FILE_PATH, df)
     return {"message": "Row updated successfully"}
 
-
-@app.delete("/csv", dependencies=[Depends(validate_token)])
+@app.delete("/api/csv", dependencies=[Depends(validate_token)])
 async def delete_row(user: str):
     """
     Delete Operation: Delete a row from the CSV file.
@@ -182,3 +199,27 @@ async def delete_row(user: str):
     df = df[df["user"] != user]
     write_csv_with_pandas(CSV_FILE_PATH, df)
     return {"message": "Row deleted successfully"}
+
+@app.post("/api/csv/restore", dependencies=[Depends(validate_token)])
+async def restore_csv():
+    """
+    Restore the original CSV file using the most recent backup file.
+    """
+    try:
+        # Identify all backup files
+        backup_files = [
+            file for file in os.listdir(".") if file.startswith(CSV_FILE_PATH) and file.endswith(".bak")
+        ]
+        if not backup_files:
+            raise HTTPException(status_code=404, detail="No backup files found.")
+        
+        # Find the most recent backup
+        most_recent_backup = max(backup_files, key=os.path.getmtime)
+
+        # Replace the original CSV file with the most recent backup
+        with open(most_recent_backup, "r") as backup, open(CSV_FILE_PATH, "w") as original:
+            original.write(backup.read())
+
+        return {"message": "CSV file restored successfully from the latest backup."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error restoring CSV: {str(e)}")
