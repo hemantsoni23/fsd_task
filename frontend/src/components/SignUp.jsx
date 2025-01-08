@@ -55,7 +55,7 @@ const SignUp = ({ toggleAuthView }) => {
         },
       });
       const {access_token} = response.data;
-      Cookies.set("accessToken", access_token);
+      Cookies.set("accessToken", access_token, { expires: 1 });
       dispatch(login(username));
       setError(null);
       Navigate("/dashboard");  

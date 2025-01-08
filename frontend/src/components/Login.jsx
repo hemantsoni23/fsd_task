@@ -52,7 +52,7 @@ const Login = ({ toggleAuthView }) => {
         },
       });
       const {access_token} = response.data;
-      Cookies.set("accessToken", access_token);
+      Cookies.set("accessToken", access_token, { expires: 1 });
       setError(null);
       dispatch(login(username));
       Navigate("/dashboard");

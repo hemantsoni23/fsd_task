@@ -206,18 +206,13 @@ async def restore_csv():
     Restore the original CSV file using the most recent backup file.
     """
     try:
-        # Identify all backup files
         backup_files = [
             file for file in os.listdir(".") if file.startswith(CSV_FILE_PATH) and file.endswith(".bak")
         ]
         if not backup_files:
             raise HTTPException(status_code=404, detail="No backup files found.")
-        
-        # Find the most recent backup
-        most_recent_backup = max(backup_files, key=os.path.getmtime)
 
-        # Replace the original CSV file with the most recent backup
-        with open(most_recent_backup, "r") as backup, open(CSV_FILE_PATH, "w") as original:
+        with open(backup_files[0], "r") as backup, open(CSV_FILE_PATH, "w") as original:
             original.write(backup.read())
 
         return {"message": "CSV file restored successfully from the latest backup."}

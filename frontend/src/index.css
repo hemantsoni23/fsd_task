@@ -12,14 +12,10 @@ body, html {
 :root {
   --primary: #4f46e5;
   --secondary: #6366f1;
-  --background-light: #f9fafb;
-  --background-dark: #1f2937;
-  --text-light: #1f2937;
-  --text-dark: #f9fafb;
-  --border-light: #e5e7eb;
-  --border-dark: #374151;
-  --muted-light: #9ca3af;
-  --muted-dark: #d1d5db;
+  --background-color: #f9fafb;
+  --text-color: #1f2937;
+  --border-color: #e5e7eb;
+  --muted-color: #9ca3af;
 }
 
 body {

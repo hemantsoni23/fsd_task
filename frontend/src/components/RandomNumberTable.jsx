@@ -2,7 +2,6 @@ import React, { useEffect, useState, useMemo } from "react";
 import Table from "./Table";
 import Cookies from "js-cookie";
 
-// Utility function to format the timestamp
 const formatTimestamp = (timestamp) => {
   const options = {
     year: "numeric",
@@ -22,7 +21,6 @@ const RandomNumberTable = () => {
   const [randomNumbers, setRandomNumbers] = useState([]);
   const [sortOrder, setSortOrder] = useState("asc");
 
-  // Function to toggle sort order
   const handleSort = () => {
     setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
   };
@@ -46,7 +44,6 @@ const RandomNumberTable = () => {
     return () => ws.close();
   }, []);
 
-  // Memoize the sorted data to avoid unnecessary recomputation
   const sortedData = useMemo(() => {
     const sorted = [...randomNumbers];
     sorted.sort((a, b) => {
@@ -58,7 +55,7 @@ const RandomNumberTable = () => {
 
   return (
     <div className="bg-white p-4 rounded shadow">
-      <div className="flex justify-between mb-4">
+      <div className="flex flex-wrap justify-between mb-4">
         <h2 className="text-lg font-semibold">Random Numbers</h2>
         <button
           className="bg-blue-500 text-white px-4 py-2 rounded"

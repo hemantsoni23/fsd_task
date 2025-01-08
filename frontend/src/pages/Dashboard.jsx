@@ -1,4 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { useDispatch } from "react-redux";
+import { logout } from "../redux/AuthSlice";
+import { useNavigate } from "react-router-dom";
 import Tabs from "../components/Tabs";
 import RandomNumberTable from "../components/RandomNumberTable";
 import Table from "../components/Table";
@@ -15,6 +18,13 @@ const Dashboard = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const dispatch = useDispatch();
+  const Navigate = useNavigate();
+
+  const handleLogout = () => {
+    dispatch(logout());
+    Navigate("/");
+  }
 
   // Fetch CSV Data
   const fetchCsvData = async () => {
@@ -47,7 +57,6 @@ const Dashboard = () => {
     }
   };
 
-
   const handleAddRow = () => {
     const newRow = {
       user: "",
@@ -57,12 +66,12 @@ const Dashboard = () => {
       pnl: 0,
       margin: 0,
       max_risk: 0,
+      new: true,
     };
     setCsvData((prev) => [...prev, newRow]);
     setShowEditModal(true);
     setSelectedRow(newRow);
   };
-
 
   const handleDelete = async (row) => {
     try {
@@ -76,14 +85,14 @@ const Dashboard = () => {
     }
   };
 
-
   const handleSaveEdit = async (editedRow) => {
     try {
-      if (editedRow.user) {
+      if (!editedRow.new) {
         await axios.put(`${process.env.REACT_APP_API_ROUTE}/api/csv`, editedRow, {
           headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` },
         });
       } else {
+        delete editedRow.new;
         await axios.post(`${process.env.REACT_APP_API_ROUTE}/api/csv`, editedRow, {
           headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` },
         });
@@ -95,21 +104,19 @@ const Dashboard = () => {
     }
   };
 
-
   return (
     <div className="min-h-screen bg-gray-100 p-4">
-      <Tabs activeTab={activeTab} setActiveTab={setActiveTab} />
-
+      <Tabs activeTab={activeTab} setActiveTab={setActiveTab} handleLogout={handleLogout} />
       {activeTab === "randomNumbers" && <RandomNumberTable />}
 
       {activeTab === "csvFile" && (
         <div className="bg-white p-4 rounded shadow">
-          <div className="flex justify-between mb-4">
+          <div className="flex flex-wrap justify-between mb-4">
             <h2 className="text-lg font-semibold">CSV File</h2>
-            <div>
+            <div className="flex flex-wrap gap-2">
               <button
-                className="bg-green-500 text-white px-4 py-2 rounded mr-2"
-                onClick={()=>setShowRestoreModal(true)}
+                className="bg-green-500 text-white px-4 py-2 rounded"
+                onClick={() => setShowRestoreModal(true)}
               >
                 Restore
               </button>
@@ -143,6 +150,7 @@ const Dashboard = () => {
 
       {showEditModal && (
         <EditModal
+          text={selectedRow.user ? "Edit Row" : "Add New Row"}
           row={selectedRow}
           onClose={() => setShowEditModal(false)}
           onSave={handleSaveEdit}
