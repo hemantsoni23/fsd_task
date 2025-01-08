@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch,useSelector } from "react-redux";
 import { logout } from "../redux/AuthSlice";
 import { useNavigate } from "react-router-dom";
 import Tabs from "../components/Tabs";
-import RandomNumberTable from "../components/RandomNumberTable";
+import RandomNumberComponent from "../components/RandomNumberComponent";
 import Table from "../components/Table";
 import ActionButtons from "../components/ActionButtons";
 import MessageModal from "../components/MessageModal";
 import EditModal from "../components/EditModal";
 import axios from "axios";
-import Cookies from "js-cookie";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("randomNumbers");
@@ -18,6 +17,7 @@ const Dashboard = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const accessToken = useSelector((state) => state.auth.authToken);
   const dispatch = useDispatch();
   const Navigate = useNavigate();
 
@@ -30,7 +30,7 @@ const Dashboard = () => {
   const fetchCsvData = async () => {
     try {
       const response = await axios.get(`${process.env.REACT_APP_API_ROUTE}/api/csv`, {
-        headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
       });
       setCsvData(response.data.data);
     } catch (error) {
@@ -48,7 +48,7 @@ const Dashboard = () => {
         `${process.env.REACT_APP_API_ROUTE}/api/csv/restore`,
         {},
         {
-          headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` },
+          headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
       fetchCsvData(); 
@@ -76,7 +76,7 @@ const Dashboard = () => {
   const handleDelete = async (row) => {
     try {
       await axios.delete(`${process.env.REACT_APP_API_ROUTE}/api/csv`, {
-        headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` },
+        headers: { Authorization: `Bearer ${accessToken}` },
         params: { user: row.user },
       });
       fetchCsvData();
@@ -89,12 +89,12 @@ const Dashboard = () => {
     try {
       if (!editedRow.new) {
         await axios.put(`${process.env.REACT_APP_API_ROUTE}/api/csv`, editedRow, {
-          headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
       } else {
         delete editedRow.new;
         await axios.post(`${process.env.REACT_APP_API_ROUTE}/api/csv`, editedRow, {
-          headers: { Authorization: `Bearer ${Cookies.get("accessToken")}` },
+          headers: { Authorization: `Bearer ${accessToken}` },
         });
       }
       setShowEditModal(false);
@@ -107,7 +107,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-4">
       <Tabs activeTab={activeTab} setActiveTab={setActiveTab} handleLogout={handleLogout} />
-      {activeTab === "randomNumbers" && <RandomNumberTable />}
+      {activeTab === "randomNumbers" && <RandomNumberComponent />}
 
       {activeTab === "csvFile" && (
         <div className="bg-white p-4 rounded shadow">
@@ -121,7 +121,7 @@ const Dashboard = () => {
                 Restore
               </button>
               <button
-                className="bg-blue-500 text-white px-4 py-2 rounded"
+                className="bg-accent text-white px-4 py-2 rounded"
                 onClick={handleAddRow}
               >
                 Add New Row

@@ -25,10 +25,10 @@ const EditModal = ({ text,row, onClose, onSave }) => {
           </div>
         ))}
         <div className="flex justify-end space-x-4">
-          <button className="bg-gray-300 px-4 py-2 rounded" onClick={onClose}>
+          <button className="bg-muted px-4 py-2 rounded" onClick={onClose}>
             Cancel
           </button>
-          <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={() => onSave(editedRow)}>
+          <button className="bg-accent text-white px-4 py-2 rounded" onClick={() => onSave(editedRow)}>
             Save
           </button>
         </div>

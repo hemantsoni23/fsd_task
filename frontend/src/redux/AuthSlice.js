@@ -1,22 +1,27 @@
 import { createSlice } from '@reduxjs/toolkit';
-import Cookies from 'js-cookie';
+
+const storedAuthToken = localStorage.getItem('authToken');
+const storedUsername = localStorage.getItem('username')
 
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
-    authToken: false,
-    username: null,
+    authToken: storedAuthToken || null,
+    username: storedUsername || null,
     status: 'idle',
   },
   reducers: {
     login: (state, action) => {
-      state.authToken = true;
-      state.username = action.payload;
+      state.authToken = action.payload.authToken;
+      state.username = action.payload.username;
+      localStorage.setItem('authToken', state.authToken);
+      localStorage.setItem('username', state.username);
     },
     logout: (state) => {
-      Cookies.remove('accessToken');
-      state.authToken = false;
+      state.authToken = null;
       state.username = null;
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('username');
     },
   },
 });

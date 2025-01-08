@@ -128,7 +128,7 @@ async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     try:
         while True:
-            raw_numbers = redis_client.zrange("random_numbers", -10, -1)
+            raw_numbers = redis_client.zrange("random_numbers", -20, -1)
             numbers = [json.loads(item) for item in raw_numbers]
 
             await websocket.send_text(json.dumps(numbers))

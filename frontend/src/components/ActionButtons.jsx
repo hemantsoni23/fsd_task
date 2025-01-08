@@ -1,9 +1,9 @@
 const ActionButtons = ({ row, onEdit, onDelete }) => (
   <div className="flex gap-2">
-    <button className="text-blue-500" onClick={onEdit}>
+    <button className="text-accent" onClick={onEdit}>
       Edit
     </button>
-    <button className="text-red-500" onClick={onDelete}>
+    <button className="text-destructive" onClick={onDelete}>
       Delete
     </button>
   </div>

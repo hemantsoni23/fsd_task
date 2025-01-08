@@ -1,5 +1,4 @@
 import axios from "axios";
-import Cookies from "js-cookie";
 import React, { useState } from "react";
 import { login } from "../redux/AuthSlice";
 import { useDispatch } from "react-redux";
@@ -51,10 +50,9 @@ const Login = ({ toggleAuthView }) => {
           'Content-Type': 'application/json',
         },
       });
-      const {access_token} = response.data;
-      Cookies.set("accessToken", access_token, { expires: 1 });
+      const {access_token:authToken} = response.data;
       setError(null);
-      dispatch(login(username));
+      dispatch(login({authToken,username}));
       Navigate("/dashboard");
     } catch (error) {
       setError(error.response?.data?.message || "Login failed. Please try again.");
@@ -63,7 +61,7 @@ const Login = ({ toggleAuthView }) => {
 
   return (
     <div className="w-full max-w-md bg-white shadow-lg rounded-lg p-6">
-      <h2 className="text-2xl font-bold text-blue-600 mb-6">Log In</h2>
+      <h2 className="text-2xl font-bold text-accent mb-6">Log In</h2>
       <form onSubmit={handleSubmit}>
         <div className="mb-4">
           <label htmlFor="username" className="block text-gray-700 font-medium mb-2">
@@ -75,7 +73,7 @@ const Login = ({ toggleAuthView }) => {
             name="username"
             value={credentials.username}
             onChange={handleChange}
-            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-accent"
             placeholder="Enter your Username"
             autoComplete="username"
           />
@@ -91,30 +89,30 @@ const Login = ({ toggleAuthView }) => {
               name="password"
               value={credentials.password}
               onChange={handleChange}
-              className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-3 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-accent"
               placeholder="Enter your password"
               autoComplete="current-password"
             />
             <button
               type="button"
-              className="absolute top-1/2 transform -translate-y-1/2 right-3 text-gray-500"
+              className="absolute top-1/2 transform -translate-y-1/2 right-3 text-muted"
               onClick={() => setShowPassword((prev) => !prev)}
             >
               {showPassword ? "🙈" : "👁️"}
             </button>
           </div>
         </div>
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+        {error && <p className="text-destructive text-md mb-4">{error}</p>}
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-3 rounded hover:bg-blue-700 transition duration-200"
+          className="w-full bg-accent text-white py-3 rounded hover:bg-blue-700 transition duration-200"
         >
           Log In
         </button>
       </form>
       <p className="mt-4 text-gray-600 text-sm text-center">
         Don't have an account?{" "}
-        <button onClick={toggleAuthView} className="text-blue-500 hover:underline">
+        <button onClick={toggleAuthView} className="text-accent hover:underline">
           Sign Up
         </button>
       </p>

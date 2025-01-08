@@ -1,11 +1,11 @@
 const Tabs = ({ activeTab, setActiveTab, handleLogout }) => (
-  <div className="flex flex-wrap justify-center items-center gap-4">
+  <div className="flex flex-wrap justify-center items-center gap-4 mb-4">
     <div className="flex flex-wrap gap-2">
       <button
         className={`px-4 py-2 ${
           activeTab === "randomNumbers"
-            ? "bg-blue-500 text-white"
-            : "bg-white text-blue-500"
+            ? "bg-accent text-white"
+            : "bg-white text-accent"
         } border rounded`}
         onClick={() => setActiveTab("randomNumbers")}
       >
@@ -14,8 +14,8 @@ const Tabs = ({ activeTab, setActiveTab, handleLogout }) => (
       <button
         className={`px-4 py-2 ${
           activeTab === "csvFile"
-            ? "bg-blue-500 text-white"
-            : "bg-white text-blue-500"
+            ? "bg-accent text-white"
+            : "bg-white text-accent"
         } border rounded`}
         onClick={() => setActiveTab("csvFile")}
       >
@@ -23,7 +23,7 @@ const Tabs = ({ activeTab, setActiveTab, handleLogout }) => (
       </button>
     </div>
     <button
-      className="px-4 py-2 text-white bg-red-400 font-medium text-lg rounded-md"
+      className="px-4 py-2 text-white bg-destructive font-medium text-lg rounded-md"
       onClick={handleLogout}
     >
       Logout

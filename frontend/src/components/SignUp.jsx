@@ -1,5 +1,4 @@
 import axios from "axios";
-import Cookies from "js-cookie";
 import React, { useState } from "react";
 import { login } from "../redux/AuthSlice";
 import { useDispatch } from "react-redux";
@@ -54,10 +53,9 @@ const SignUp = ({ toggleAuthView }) => {
           'Content-Type': 'application/json',
         },
       });
-      const {access_token} = response.data;
-      Cookies.set("accessToken", access_token, { expires: 1 });
-      dispatch(login(username));
+      const {access_token:authToken} = response.data;
       setError(null);
+      dispatch(login({authToken,username}));
       Navigate("/dashboard");  
     } catch (error) {
       setError(error.response?.data?.message || "Sign up failed. Please try again.");

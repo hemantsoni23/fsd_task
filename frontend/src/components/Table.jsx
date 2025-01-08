@@ -1,63 +1,101 @@
-const Table = ({ headers, data, isEditable, actions, newRow, setNewRow }) => (
-  <div className="overflow-x-auto">
-    <table className="min-w-full bg-gray-100 border">
-      <thead>
-        <tr>
-          {headers.map((header, index) => (
-            <th key={index} className="border px-4 py-2 text-sm lg:text-base">
-              {header.toUpperCase()}
-            </th>
+import React, { useState } from "react";
+
+const Table = ({ headers, data, isEditable, actions, newRow, setNewRow }) => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const entriesPerPage = 10;
+  const totalPages = Math.ceil(data.length / entriesPerPage);
+  const startIndex = (currentPage - 1) * entriesPerPage;
+  const endIndex = startIndex + entriesPerPage;
+  const paginatedData = data.slice(startIndex, endIndex);
+
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full bg-gray-100 border">
+        <thead>
+          <tr>
+            {headers.map((header, index) => (
+              <th key={index} className="border px-4 py-2 text-sm lg:text-base">
+                {header.toUpperCase()}
+              </th>
+            ))}
+            {actions && (
+              <th className="border px-4 py-2 text-sm lg:text-base">Actions</th>
+            )}
+          </tr>
+        </thead>
+        <tbody>
+          {paginatedData.map((row, rowIndex) => (
+            <tr key={rowIndex} className="text-sm lg:text-base">
+              {Object.entries(row).map(([key, value]) => (
+                <td key={key} className="border px-4 py-2 text-center">
+                  {isEditable ? (
+                    <input
+                      type="text"
+                      value={value}
+                      className="w-full bg-transparent border-none"
+                      onChange={(e) =>
+                        setNewRow((prev) => ({
+                          ...prev,
+                          [key]: e.target.value,
+                        }))
+                      }
+                    />
+                  ) : (
+                    value
+                  )}
+                </td>
+              ))}
+              {actions && <td className="border px-4 py-2">{actions(row)}</td>}
+            </tr>
           ))}
-          {actions && <th className="border px-4 py-2 text-sm lg:text-base">Actions</th>}
-        </tr>
-      </thead>
-      <tbody>
-        {data.map((row, rowIndex) => (
-          <tr key={rowIndex} className="text-sm lg:text-base">
-            {Object.entries(row).map(([key, value]) => (
-              <td key={key} className="border px-4 py-2 text-center">
-                {isEditable ? (
+          {isEditable && newRow && (
+            <tr>
+              {headers.map((header) => (
+                <td key={header} className="border px-4 py-2">
                   <input
                     type="text"
-                    value={value}
+                    value={newRow[header] || ""}
                     className="w-full bg-transparent border-none"
                     onChange={(e) =>
                       setNewRow((prev) => ({
                         ...prev,
-                        [key]: e.target.value,
+                        [header]: e.target.value,
                       }))
                     }
                   />
-                ) : (
-                  value
-                )}
-              </td>
-            ))}
-            {actions && <td className="border px-4 py-2">{actions(row)}</td>}
-          </tr>
-        ))}
-        {isEditable && newRow && (
-          <tr>
-            {headers.map((header) => (
-              <td key={header} className="border px-4 py-2">
-                <input
-                  type="text"
-                  value={newRow[header] || ""}
-                  className="w-full bg-transparent border-none"
-                  onChange={(e) =>
-                    setNewRow((prev) => ({
-                      ...prev,
-                      [header]: e.target.value,
-                    }))
-                  }
-                />
-              </td>
-            ))}
-          </tr>
-        )}
-      </tbody>
-    </table>
-  </div>
-);
+                </td>
+              ))}
+            </tr>
+          )}
+        </tbody>
+      </table>
+      <div className="flex justify-between items-center mt-4">
+        <button
+          className="px-4 py-2 bg-muted rounded disabled:opacity-50"
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </button>
+        <span>
+          Page {currentPage} of {totalPages}
+        </span>
+        <button
+          className="px-4 py-2 bg-muted rounded disabled:opacity-50"
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+};
 
 export default Table;

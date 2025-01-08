@@ -1,9 +1,9 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-import Cookies from "js-cookie";
+import { useSelector } from "react-redux";
 
 function PrivateRoute({ children }) {
-  const accessToken = Cookies.get("accessToken");
+  const accessToken = useSelector((state) => state.auth.authToken);
   return accessToken ? children : <Navigate to="/" replace />;
 }
 

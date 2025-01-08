@@ -42,7 +42,7 @@ def write_csv_with_pandas(file_path, df):
 
 def generate_random_number():
     import random
-    return int(random.uniform(0, 1000000))
+    return int(random.uniform(0, 100))
 
 def validate_token(request: Request):
     auth_header = request.headers.get("Authorization")
