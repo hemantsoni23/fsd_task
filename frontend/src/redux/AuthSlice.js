@@ -1,13 +1,19 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const storedAuthToken = localStorage.getItem('authToken');
-const storedUsername = localStorage.getItem('username')
+const storedUsername = localStorage.getItem('username');
+const storedTheme = localStorage.getItem('theme') || 'light';
+
+if (storedTheme === 'dark') {
+  document.body.classList.add('dark');
+}
 
 const authSlice = createSlice({
   name: 'auth',
   initialState: {
     authToken: storedAuthToken || null,
     username: storedUsername || null,
+    theme: storedTheme,
     status: 'idle',
   },
   reducers: {
@@ -23,8 +29,19 @@ const authSlice = createSlice({
       localStorage.removeItem('authToken');
       localStorage.removeItem('username');
     },
+    toggleTheme: (state) => {
+      state.theme = state.theme === 'light' ? 'dark' : 'light';
+
+      if (state.theme === 'dark') {
+        document.body.classList.add('dark');
+      } else {
+        document.body.classList.remove('dark');
+      }
+
+      localStorage.setItem('theme', state.theme);
+    },
   },
 });
 
-export const { login, logout } = authSlice.actions;
+export const { login, logout, toggleTheme } = authSlice.actions;
 export default authSlice.reducer;

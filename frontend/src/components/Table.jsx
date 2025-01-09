@@ -15,30 +15,30 @@ const Table = ({ headers, data, isEditable, actions, newRow, setNewRow }) => {
   };
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full bg-gray-100 border">
+    <div className="overflow-x-auto bg-background">
+      <table className="min-w-full border border-border">
         <thead>
-          <tr>
+          <tr className="bg-hover">
             {headers.map((header, index) => (
-              <th key={index} className="border px-4 py-2 text-sm lg:text-base">
+              <th key={index} className="border border-border px-4 py-2 text-sm lg:text-base text-text">
                 {header.toUpperCase()}
               </th>
             ))}
             {actions && (
-              <th className="border px-4 py-2 text-sm lg:text-base">Actions</th>
+              <th className="border border-border px-4 py-2 text-sm lg:text-base text-text">Actions</th>
             )}
           </tr>
         </thead>
         <tbody>
           {paginatedData.map((row, rowIndex) => (
-            <tr key={rowIndex} className="text-sm lg:text-base">
+            <tr key={rowIndex} className="text-sm lg:text-base hover:bg-hover">
               {Object.entries(row).map(([key, value]) => (
-                <td key={key} className="border px-4 py-2 text-center">
+                <td key={key} className="border px-4 py-2 text-text text-center">
                   {isEditable ? (
                     <input
                       type="text"
                       value={value}
-                      className="w-full bg-transparent border-none"
+                      className="w-full border-none"
                       onChange={(e) =>
                         setNewRow((prev) => ({
                           ...prev,
@@ -51,7 +51,7 @@ const Table = ({ headers, data, isEditable, actions, newRow, setNewRow }) => {
                   )}
                 </td>
               ))}
-              {actions && <td className="border px-4 py-2">{actions(row)}</td>}
+              {actions && <td className="border px-4 py-2 text-text">{actions(row)}</td>}
             </tr>
           ))}
           {isEditable && newRow && (
@@ -61,7 +61,7 @@ const Table = ({ headers, data, isEditable, actions, newRow, setNewRow }) => {
                   <input
                     type="text"
                     value={newRow[header] || ""}
-                    className="w-full bg-transparent border-none"
+                    className="w-full border-none"
                     onChange={(e) =>
                       setNewRow((prev) => ({
                         ...prev,
@@ -77,7 +77,7 @@ const Table = ({ headers, data, isEditable, actions, newRow, setNewRow }) => {
       </table>
       <div className="flex justify-between items-center mt-4">
         <button
-          className="px-4 py-2 bg-muted rounded disabled:opacity-50"
+          className="px-4 py-2 rounded disabled:opacity-50"
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
         >
@@ -87,7 +87,7 @@ const Table = ({ headers, data, isEditable, actions, newRow, setNewRow }) => {
           Page {currentPage} of {totalPages}
         </span>
         <button
-          className="px-4 py-2 bg-muted rounded disabled:opacity-50"
+          className="px-4 py-2 rounded disabled:opacity-50"
           onClick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
         >

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch,useSelector } from "react-redux";
-import { logout } from "../redux/AuthSlice";
+import { logout, toggleTheme } from "../redux/AuthSlice";
 import { useNavigate } from "react-router-dom";
 import Tabs from "../components/Tabs";
 import RandomNumberComponent from "../components/RandomNumberComponent";
@@ -17,6 +17,7 @@ const Dashboard = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showRestoreModal, setShowRestoreModal] = useState(false);
+  const [error, setError] = useState(null);
   const accessToken = useSelector((state) => state.auth.authToken);
   const dispatch = useDispatch();
   const Navigate = useNavigate();
@@ -24,6 +25,10 @@ const Dashboard = () => {
   const handleLogout = () => {
     dispatch(logout());
     Navigate("/");
+  }
+
+  const handleThemeToggle = () => {
+    dispatch(toggleTheme());
   }
 
   // Fetch CSV Data
@@ -35,6 +40,7 @@ const Dashboard = () => {
       setCsvData(response.data.data);
     } catch (error) {
       console.error("Error fetching CSV data:", error);
+      setError("Failed to fetch CSV data.");
     }
   };
 
@@ -53,6 +59,7 @@ const Dashboard = () => {
       );
       fetchCsvData(); 
     } catch (error) {
+      setError("Failed to restore CSV data.");
       console.error("Error restoring CSV:", error);
     }
   };
@@ -81,6 +88,7 @@ const Dashboard = () => {
       });
       fetchCsvData();
     } catch (error) {
+      setError("Failed to delete row.");
       console.error("Error deleting row:", error);
     }
   };
@@ -100,28 +108,29 @@ const Dashboard = () => {
       setShowEditModal(false);
       fetchCsvData();
     } catch (error) {
+      setError("Failed to save row.");
       console.error("Error saving row:", error);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      <Tabs activeTab={activeTab} setActiveTab={setActiveTab} handleLogout={handleLogout} />
+    <div className="min-h-screen p-4 bg-background text-text">
+      <Tabs activeTab={activeTab} setActiveTab={setActiveTab} handleLogout={handleLogout} handleThemeToggle={handleThemeToggle} />
       {activeTab === "randomNumbers" && <RandomNumberComponent />}
 
       {activeTab === "csvFile" && (
-        <div className="bg-white p-4 rounded shadow">
+        <div className="p-4 bg-hover rounded shadow">
           <div className="flex flex-wrap justify-between mb-4">
             <h2 className="text-lg font-semibold">CSV File</h2>
             <div className="flex flex-wrap gap-2">
               <button
-                className="bg-green-500 text-white px-4 py-2 rounded"
+                className="bg-primary text-white px-4 py-2 rounded"
                 onClick={() => setShowRestoreModal(true)}
               >
                 Restore
               </button>
               <button
-                className="bg-accent text-white px-4 py-2 rounded"
+                className="bg-secondary text-white px-4 py-2 rounded"
                 onClick={handleAddRow}
               >
                 Add New Row
@@ -169,13 +178,13 @@ const Dashboard = () => {
           }}
         />
       )}
-      {showRestoreModal && (
+      {(showRestoreModal || error) && (
         <MessageModal
-          text={`Are you sure you want to restore this table?`}
-          button1_text="Cancel"
-          button2_text="Restore"
+          text={error ? error : `Are you sure you want to restore this table?`}
+          button1_text={error ? null : "Cancel"}
+          button2_text={error ? "Close" : "Restore"}
           onClose={() => setShowRestoreModal(false)}
-          handleAction={() => {
+          handleAction={error ? ()=>setError(null):() => {
             handleRestore();
             setShowRestoreModal(false);
           }}
