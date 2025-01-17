@@ -1,8 +1,8 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Depends, HTTPException, status, BackgroundTasks, Request
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import FastAPI, Depends, HTTPException, status, Request, Query
+from fastapi import WebSocket, WebSocketDisconnect
+from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from jose import jwt, JWTError
-from typing import Optional
 from app.config.configRedis import redis_client
 from app.config.configMongodb import client as mongodb_client
 from app.utils import (
@@ -14,11 +14,7 @@ from app.utils import (
     write_csv_with_pandas,
 )
 from datetime import datetime, timedelta
-import pytz
-import threading
-import os
-import asyncio
-import json
+import time, pytz, threading, os, asyncio, json
 import pandas as pd
 
 app = FastAPI()
@@ -29,9 +25,6 @@ ALGORITHM = "HS256"
 
 
 IST = pytz.timezone("Asia/Kolkata")
-
-# OAuth2 for login
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 # Path to the CSV file
 CSV_FILE_PATH = "backend_table.csv"
@@ -111,33 +104,68 @@ async def login(request: Request):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Error: {str(e)}")
 
-
-@app.websocket("/ws/random_numbers")
-async def websocket_endpoint(websocket: WebSocket):
-    token = websocket.query_params.get("token")
-    if not token:
-        await websocket.close(code=4001, reason="Authentication token required")
-        return
-
+def sse_stream():
+    last_timestamp = None 
+    
     try:
-        verify_token(token)
-    except HTTPException:
-        await websocket.close(code=4001, reason="Invalid authentication token")
-        return
-
-    await websocket.accept()
-    try:
-        while True:
-            raw_numbers = redis_client.zrange("random_numbers", -20, -1)
-            numbers = [json.loads(item) for item in raw_numbers]
-
-            await websocket.send_text(json.dumps(numbers))
-            await asyncio.sleep(1)
-    except WebSocketDisconnect:
-        print("WebSocket connection closed")
+        raw_numbers = redis_client.zrange("random_numbers", -20, -1)
+        numbers = [json.loads(item) for item in raw_numbers]
+        
+        yield f"data: {json.dumps(numbers)}\n\n"
+        
+        if numbers:
+            last_timestamp = datetime.fromisoformat(numbers[-1]["timestamp"]).timestamp()
     except Exception as e:
-        print(f"WebSocket error: {e}")
-        await websocket.close()
+        yield f"data: {json.dumps({'error': str(e)})}\n\n"
+    
+    while True:
+        try:
+            min_score = f"({last_timestamp}" if last_timestamp else "-inf"
+            raw_numbers = redis_client.zrangebyscore("random_numbers", min_score, "+inf")
+            latest_numbers = [json.loads(item) for item in raw_numbers]  
+
+            if latest_numbers:
+                yield f"data: {json.dumps(latest_numbers)}\n\n"
+                last_timestamp = datetime.fromisoformat(latest_numbers[-1]["timestamp"]).timestamp()
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e)})}\n\n"
+        
+        time.sleep(1)  
+
+@app.get("/sse/random_numbers")
+async def send_random_numbers(token: str = Query(None)):
+    if not token:
+        raise HTTPException(status_code=401, detail="Authentication token is required")
+    
+    verify_token(token)
+    return StreamingResponse(sse_stream(), media_type="text/event-stream")
+
+# @app.websocket("/ws/random_numbers")
+# async def websocket_endpoint(websocket: WebSocket):
+#     token = websocket.query_params.get("token")
+    # if not token:
+    #     await websocket.close(code=4001, reason="Authentication token required")
+    #     return
+
+    # try:
+    #     verify_token(token)
+    # except HTTPException:
+    #     await websocket.close(code=4001, reason="Invalid authentication token")
+    #     return
+
+#     await websocket.accept()
+#     try:
+        # while True:
+        #     raw_numbers = redis_client.zrange("random_numbers", -20, -1)
+        #     numbers = [json.loads(item) for item in raw_numbers]
+
+        #     await websocket.send_text(json.dumps(numbers))
+        #     await asyncio.sleep(1)
+#     except WebSocketDisconnect:
+#         print("WebSocket connection closed")
+#     except Exception as e:
+#         print(f"WebSocket error: {e}")
+#         await websocket.close()
 
 
 @app.get("/api/csv", dependencies=[Depends(validate_token)])

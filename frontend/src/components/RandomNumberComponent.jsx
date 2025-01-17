@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import Table from "./Table";
 import MessageModal from "./MessageModal";
-import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { Line } from "react-chartjs-2";
 import {
@@ -12,6 +11,7 @@ import {
   Title,
   CategoryScale,
 } from "chart.js";
+import CandleStickPattern from "./CandleStickPattern";
 
 ChartJS.register(LineElement, PointElement, LinearScale, Title, CategoryScale);
 
@@ -63,8 +63,7 @@ const RandomNumberComponent = () => {
   const [randomNumbers, setRandomNumbers] = useState([]);
   const [sortOrder, setSortOrder] = useState("asc");
   const [activeTab, setActiveTab] = useState("table");
-  const [error, setError] = useState(null); 
-  const navigate = useNavigate();
+  const [error, setError] = useState(null);
   const accessToken = useSelector((state) => state.auth.authToken);
 
   const handleSort = () => {
@@ -72,29 +71,48 @@ const RandomNumberComponent = () => {
   };
 
   useEffect(() => {
-    const ws = new WebSocket(
-      `${process.env.REACT_APP_WS_ROUTE}/random_numbers?token=${accessToken}`
-    );
+    // const ws = new WebSocket(
+    //   `${process.env.REACT_APP_WS_ROUTE}/random_numbers?token=${accessToken}`
+    // );
 
-    ws.onmessage = (event) => {
+    // ws.onmessage = (event) => {
+    //   try {
+    //     const data = JSON.parse(event.data);
+    //     setRandomNumbers(data);
+    //   } catch (err) {
+    //     setError("Failed to parse WebSocket data.");
+    //   }
+    // };
+
+    // ws.onerror = (err) => {
+    //   console.error("WebSocket error:", err);
+    //   setError("Failed to connect to WebSocket. Logout and try to login again");
+    // };
+
+    // ws.onclose = () => {
+    //   console.log("WebSocket closed");
+    // };
+
+    // return () => ws.close();
+
+    const sse = new EventSource(`${process.env.REACT_APP_API_ROUTE}/sse/random_numbers?token=${accessToken}`);
+
+    sse.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        setRandomNumbers(data);
+        setRandomNumbers((prev)=>[...prev,...data].slice(-20));
       } catch (err) {
-        setError("Failed to parse WebSocket data.");
+        setError("Failed to parse Server-Sent Event data.");
       }
+    }
+
+    sse.onerror = () => {
+      console.error("Error with SSE connection");
+      sse.close();
     };
 
-    ws.onerror = (err) => {
-      console.error("WebSocket error:", err);
-      setError("Failed to connect to WebSocket. Logout and try to login again");
-    };
+    return () => sse.close();
 
-    ws.onclose = () => {
-      console.log("WebSocket closed");
-    };
-
-    return () => ws.close();
   }, [accessToken]);
 
   const sortedData = useMemo(() => {
@@ -113,7 +131,7 @@ const RandomNumberComponent = () => {
         {
           label: "Random Numbers",
           data: randomNumbers.map((item) => item.number),
-          borderColor: "rgba(75,192,192,1)",
+          borderColor: "rgba(255,0,0)",
           backgroundColor: "rgba(255,255,255)",
           tension: 0.4,
         },
@@ -145,16 +163,31 @@ const RandomNumberComponent = () => {
         >
           Chart
         </button>
+        <button
+          className={`px-4 py-2 rounded ${
+            activeTab === "empty"
+              ? "bg-primary text-white"
+              : "bg-secondary text-white"
+          }`}
+          onClick={() => setActiveTab("empty")}
+        >
+          Empty
+        </button>
+        
       </div>
       {activeTab === "chart" ? (
         <ChartView chartData={chartData} />
       ) : (
-        <TableView
-          sortedData={sortedData}
-          formatTimestamp={formatTimestamp}
-          sortOrder={sortOrder}
-          handleSort={handleSort}
-        />
+        activeTab === 'empty' ? (
+          <CandleStickPattern />
+        ) : (
+          <TableView
+            sortedData={sortedData}
+            formatTimestamp={formatTimestamp}
+            sortOrder={sortOrder}
+            handleSort={handleSort}
+          />
+        )
       )}
       {error && (
         <MessageModal
